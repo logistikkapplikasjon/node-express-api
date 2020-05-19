@@ -18,7 +18,7 @@ Eventuelt legg inn Visual Studio 2015 Build tools fra: https://www.microsoft.com
 ### Klon Repo og installer
 
 ```
-git clone https://github.com/logistikkapplikasjon/node-express-api.git
+git clone https://github.com/arnstadm/node-express-api.git
 cd node-express-api
 npm install
 ved feilmeldinger på installasjon av tensorflow bruk:

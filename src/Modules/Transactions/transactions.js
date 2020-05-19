@@ -60,7 +60,7 @@ const createTransaction = async (req, res) => {
   })
     .then((result) => {
       return res.status(200).json({
-        message: `Transaksjon med ID ${result.transaction_id} lagret`,
+        message: 'Transaksjon lagret',
         result: result.transaction_id,
       });
     })
