@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: Modules/Users/userModules.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: Modules/Users/userModules.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import db from '../../db/db.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import secret from '../Authorization/secret';
+import { validationResult } from 'express-validator';
+
+/**
+ * User modules for user endpoints
+ */
+
+/**
+ * Asynchronous function for providing current users information. Takes in a header with token in request.
+ * @param {Request} req Request from client.
+ * @param {Response} res Response sent to client.
+ */
+const getMe = async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  const tokendata = jwt.verify(token, secret);
+  const company_id = tokendata.company_id;
+  const user_id = tokendata.user_id;
+  await db
+    .oneOrNone('SELECT * FROM users WHERE user_id = $1 AND company_id = $2', [
+      user_id,
+      company_id,
+    ])
+    .then((response) => {
+      return res.status(200).json({ result: response });
+    })
+    .catch((error) => {
+      return res.status(500).json({ error: error });
+    });
+};
+
+/**
+ * Asynchronous function for creating a user and storing it in the database. Takes in an object with first_name, last_name, password, email, user_level and phone_number.
+ * Checks for duplications on email address.
+ * Hashes and salts the password with bcrypt.
+ * @param {Request} req Request from client.
+ * @param {Response} res Response sent to client.
+ */
+const createUser = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  const token = req.headers.authorization.split(' ')[1];
+  const tokendata = jwt.verify(token, secret);
+  const {
+    body: { first_name },
+    body: { last_name },
+    body: { password },
+    body: { email },
+    body: { user_level },
+    body: { phone_number },
+  } = req;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = {
+    first_name: first_name,
+    last_name: last_name,
+    password: hashedPassword,
+    email: email,
+    company_id: tokendata.company_id,
+    user_level: user_level,
+    phone_number: phone_number,
+  };
+  const userCheck = await db.oneOrNone(
+    'SELECT * FROM users WHERE company_id = $1 AND email = $2',
+    [user.company_id, user.email]
+  );
+
+  if (userCheck &amp;&amp; userCheck.email) {
+    return res.status(400).json({
+      message: `Bruker med epostadresse ${userCheck.email} eksisterer allerede`,
+      error: 'Duplicate',
+    });
+  } else {
+    await db
+      .query(
+        'INSERT INTO users (${this:name}) VALUES (${this:csv}) RETURNING user_id',
+        user
+      )
+      .then((response) => {
+        return res.status(200).json({
+          message: 'Bruker opprettet',
+          result: response,
+        });
+      })
+      .catch((error) => {
+        return res.status(500).json({
+          error: error,
+          message: 'Bruker kunne ikke registreres',
+        });
+      });
+  }
+};
+
+module.exports = {
+  getMe,
+  createUser,
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#app">app</a></li><li><a href="global.html#createItem">createItem</a></li><li><a href="global.html#createItemType">createItemType</a></li><li><a href="global.html#createProject">createProject</a></li><li><a href="global.html#createTransaction">createTransaction</a></li><li><a href="global.html#createUser">createUser</a></li><li><a href="global.html#deleteFromDb">deleteFromDb</a></li><li><a href="global.html#getAll">getAll</a></li><li><a href="global.html#getById">getById</a></li><li><a href="global.html#getCompanyId">getCompanyId</a></li><li><a href="global.html#getMe">getMe</a></li><li><a href="global.html#getTransactionsByDate">getTransactionsByDate</a></li><li><a href="global.html#imageDetections">imageDetections</a></li><li><a href="global.html#pgp">pgp</a></li><li><a href="global.html#registerCompany">registerCompany</a></li><li><a href="global.html#signIn">signIn</a></li><li><a href="global.html#toUint8Array">toUint8Array</a></li><li><a href="global.html#update">update</a></li><li><a href="global.html#validate">validate</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.4</a> on Tue May 19 2020 19:05:14 GMT+0200 (GMT+02:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
